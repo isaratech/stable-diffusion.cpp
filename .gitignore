@@ -13,3 +13,4 @@ models*
 !taesd-model.gguf
 *.log
 cmake-build-*/
+.idea/
