@@ -474,7 +474,8 @@ int main(int argc, const char* argv[]) {
                              params.sample_method,
                              params.sample_steps,
                              params.seed,
-                             params.batch_count);
+                             params.batch_count,
+                             nullptr);
     } else {
         results = sd.img2img(input_image_buffer,
                              params.prompt,
@@ -485,7 +486,8 @@ int main(int argc, const char* argv[]) {
                              params.sample_method,
                              params.sample_steps,
                              params.strength,
-                             params.seed);
+                             params.seed,
+                             nullptr);
     }
 
     if (results.size() == 0 || results.size() != params.batch_count) {
