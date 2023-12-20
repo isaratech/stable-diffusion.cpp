@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+typedef void (*ProgressFunction)(int currentStep, int steps, float timeSpent);
+
 enum RNGType {
     STD_DEFAULT_RNG,
     CUDA_RNG
@@ -55,7 +57,8 @@ public:
         SampleMethod sample_method,
         int sample_steps,
         int64_t seed,
-        int batch_count);
+        int batch_count,
+        ProgressFunction progress);
 
     std::vector<uint8_t*> img2img(
         const uint8_t* init_img_data,
@@ -67,7 +70,8 @@ public:
         SampleMethod sample_method,
         int sample_steps,
         float strength,
-        int64_t seed);
+        int64_t seed,
+        ProgressFunction progress);
 };
 
 std::string sd_get_system_info();

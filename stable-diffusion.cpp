@@ -4655,7 +4655,8 @@ public:
                         ggml_tensor* uc,
                         float cfg_scale,
                         SampleMethod method,
-                        const std::vector<float>& sigmas) {
+                        const std::vector<float>& sigmas,
+                        ProgressFunction progress) {
         size_t steps = sigmas.size() - 1;
         // x_t = load_tensor_from_file(work_ctx, "./rand0.bin");
         // print_ggml_tensor(x_t);
@@ -4689,6 +4690,9 @@ public:
         auto denoise = [&](ggml_tensor* input, float sigma, int step) {
             if (step == 1) {
                 pretty_progress(0, (int)steps, 0);
+                if (progress != nullptr) {
+                    progress(0, (int)steps, 0);
+                }
             }
             int64_t t0 = ggml_time_us();
 
@@ -4740,6 +4744,9 @@ public:
             int64_t t1 = ggml_time_us();
             if (step > 0) {
                 pretty_progress(step, (int)steps, (t1 - t0) / 1000000.f);
+                if (progress != nullptr) {
+                    progress(step, (int)steps, (t1 - t0) / 1000000.f);
+                }
                 // LOG_INFO("step %d sampling completed taking %.2fs", step, (t1 - t0) * 1.0f / 1000000);
             }
         };
@@ -5239,7 +5246,8 @@ std::vector<uint8_t*> StableDiffusion::txt2img(std::string prompt,
                                                SampleMethod sample_method,
                                                int sample_steps,
                                                int64_t seed,
-                                               int batch_count) {
+                                               int batch_count,
+                                               ProgressFunction progress) {
     std::vector<uint8_t*> results;
     if (width >= 1024 && height >= 1024) {  // 1024 x 1024 images
         LOG_WARN("Image too large, try a smaller size.");
@@ -5310,7 +5318,7 @@ std::vector<uint8_t*> StableDiffusion::txt2img(std::string prompt,
 
         std::vector<float> sigmas = sd->denoiser->schedule->get_sigmas(sample_steps);
 
-        struct ggml_tensor* x_0 = sd->sample(work_ctx, x_t, NULL, c, uc, cfg_scale, sample_method, sigmas);
+        struct ggml_tensor* x_0 = sd->sample(work_ctx, x_t, NULL, c, uc, cfg_scale, sample_method, sigmas, progress);
         // struct ggml_tensor* x_0 = load_tensor_from_file(ctx, "samples_ddim.bin");
         // print_ggml_tensor(x_0);
         int64_t sampling_end = ggml_time_ms();
@@ -5357,7 +5365,8 @@ std::vector<uint8_t*> StableDiffusion::img2img(const uint8_t* init_img_data,
                                                SampleMethod sample_method,
                                                int sample_steps,
                                                float strength,
-                                               int64_t seed) {
+                                               int64_t seed,
+                                               ProgressFunction progress) {
     std::vector<uint8_t*> result;
     LOG_INFO("img2img %dx%d", width, height);
 
@@ -5435,7 +5444,7 @@ std::vector<uint8_t*> StableDiffusion::img2img(const uint8_t* init_img_data,
     ggml_tensor_set_f32_randn(noise, sd->rng);
 
     LOG_INFO("sampling using %s method", sampling_methods_str[sample_method]);
-    struct ggml_tensor* x_0 = sd->sample(work_ctx, init_latent, noise, c, uc, cfg_scale, sample_method, sigma_sched);
+    struct ggml_tensor* x_0 = sd->sample(work_ctx, init_latent, noise, c, uc, cfg_scale, sample_method, sigma_sched, progress);
     // struct ggml_tensor *x_0 = load_tensor_from_file(ctx, "samples_ddim.bin");
     // print_ggml_tensor(x_0);
     int64_t t3 = ggml_time_ms();
